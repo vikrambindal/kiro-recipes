@@ -1,11 +1,12 @@
-package com.kirotodo.adapter.in;
+package com.kirotodo.adapter.in.resource;
 
 import com.kirotodo.port.in.todo.CreateTodoUseCase;
-import com.kirotodo.port.in.todo.ListTodoItemsUseCase;
+import com.kirotodo.port.in.todo.SearchTodoUseCase;
 import com.kirotodo.port.in.todo.UpdateTodoUseCase;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,46 +18,47 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/todos")
 @RequiredArgsConstructor
 public class TodoController {
 
     private final CreateTodoUseCase createTodoUseCase;
-    private final ListTodoItemsUseCase listTodoItemsUseCase;
+    private final SearchTodoUseCase searchTodoUseCase;
     private final UpdateTodoUseCase updateTodoUseCase;
 
     @PostMapping
-    public ResponseEntity<CreateTodoUseCase.Response> createTodo(@RequestBody CreateTodoUseCase.Request request) {
+    public ResponseEntity<CreateTodoUseCase.Response> create(@Valid @RequestBody CreateTodoUseCase.Request request) {
+        log.info("POST /api/v1/todos - title='{}'", request.title());
         CreateTodoUseCase.Response response = createTodoUseCase.create(request);
-
         return ResponseEntity
             .created(URI.create("/api/v1/todos/" + response.id()))
             .body(response);
     }
 
     @GetMapping
-    public ResponseEntity<List<ListTodoItemsUseCase.Response>> listTodos(
+    public ResponseEntity<List<SearchTodoUseCase.Response>> search(
         @RequestParam(required = false) Boolean status,
-        @RequestParam(defaultValue = "desc") ListTodoItemsUseCase.SortOrder dueDateOrder
+        @RequestParam(defaultValue = "DESC") SearchTodoUseCase.SortOrder dueDateOrder
     ) {
-        ListTodoItemsUseCase.Request listRequest = new ListTodoItemsUseCase.Request(status, dueDateOrder);
-        List<ListTodoItemsUseCase.Response> response = listTodoItemsUseCase.list(listRequest);
-
+        log.debug("GET /api/v1/todos - status={}, dueDateOrder={}", status, dueDateOrder);
+        List<SearchTodoUseCase.Response> response = searchTodoUseCase.search(new SearchTodoUseCase.Request(status, dueDateOrder));
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UpdateTodoUseCase.Response> updateTodo(
-        @PathVariable("id") java.util.UUID id,
-        @RequestBody UpdateTodoUseCase.Request request
+    public ResponseEntity<UpdateTodoUseCase.Response> update(
+        @PathVariable UUID id,
+        @Valid @RequestBody UpdateTodoUseCase.Request request
     ) {
-        // Ensure the ID in the path matches the ID in the request body
+        log.info("PUT /api/v1/todos/{} ", id);
         if (!id.equals(request.id())) {
+            log.warn("Path id={} does not match body id={}", id, request.id());
             return ResponseEntity.badRequest().build();
         }
-        UpdateTodoUseCase.Response response = updateTodoUseCase.update(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(updateTodoUseCase.update(request));
     }
 }

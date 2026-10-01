@@ -1,37 +1,42 @@
 ---
 inclusion: auto
 inclusionMode: fileMatch
-fileMatchPattern: "README*|*.md"
+fileMatchPattern: "*.md"
 ---
 
-# Hexagonal Architecture (Ports and Adapters)
-
-The project should follow a Hexagonal architecture with clear separation of concerns.
+# Hexagonal Architecture
 
 ## Package Structure
 
 ```
 src/main/java/com/kirotodo/
-├── adapter/              # External system adapters
-│   ├── in/              # Incoming adapters (REST controllers, CLI)
-│   └── out/             # Outgoing adapters (database, APIs)
-├── configuration/       # Spring configuration and bean wiring
-├── core/                # Domain logic and business rules
-│   ├── domain/          # Domain models and service implementations
-│   ├── converter/       # Conversion logic
-│   ├── utility/         # Utility classes
-│   └── dto/             # Data Transfer Objects
-└── port/                # Port interfaces
-    ├── in/              # Incoming ports (used by adapter/in)
-    └── out/             # Outgoing ports (used by adapter/out)
+├── adapter/
+│   ├── in/{type}/               # Incoming adapters: controller, kafka
+│   └── out/{type}/              # Outgoing adapters: database, cache, messaging
+│       ├── entity/              # Persistence entities — never cross this boundary
+│       ├── reader/              # Read-side adapter implementations
+│       └── writer/              # Write-side adapter implementations
+├── configuration/               # Spring bean wiring and app configuration
+├── core/
+│   ├── domain/                  # Business services and domain models
+│   ├── converter/               # Mapping between domain models and DTOs
+│   └── dto/                     # Data Transfer Objects for external contracts
+└── port/
+    ├── in/{domain}/             # Inbound use case interfaces (driven by adapters/in)
+    └── out/{domain}/            # Outbound dependency interfaces (implemented by adapters/out)
 ```
 
-## Quick Reference
+## Dependency Rules
 
-See the individual documentation files for detailed guidelines:
-- [Ports Conventions](ports-conventions.md)
-- [Adapters Conventions](adapters-conventions.md)
-- [Services Conventions](services-conventions.md)
-- [Lombok Conventions](lombok-conventions.md)
-- [Naming Conventions](naming-conventions.md)
-- [Request/Response Flow](request-response-flow.md)
+- `adapter/in` depends on `port/in` — never on `core/domain` directly
+- `core/domain` depends on `port/out` — never on `adapter/out` directly
+- `adapter/out` implements `port/out` — never imports from `core/domain`
+- `port/in` and `port/out` have no dependencies on any other layer
+- Framework annotations (`@Service`, `@Repository`, `@RestController`) belong in adapters and services — never in ports
+
+## Standards
+
+- [Java & Spring Standards](java-spring-standards.md)
+- [Ports Layer](hexagonal/ports-layer.md)
+- [Adapter Layer](hexagonal/adapter-layer.md)
+- [Domain Layer](hexagonal/domain-layer.md)
