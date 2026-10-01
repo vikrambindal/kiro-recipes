@@ -46,6 +46,7 @@ Evaluate against `.kiro/steering/coding-standards/`:
 - Port structure follows `ports-layer.md`
 - Adapter structure follows `adapter-layer.md`
 - Domain layer follows `domain-layer.md`
+- `HexagonalArchitectureTest` exists under `src/test/java/.../architecture/` and all ArchUnit rules pass
 
 ### 4. Product Completeness — score /10
 Cross-reference `product.md` against the implementation:
